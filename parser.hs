@@ -86,16 +86,15 @@ parseScala str =
         parsedData = parseMaps (parseList listInnards []) []
     in parsedData
 
-fillTheGrid :: [InternalMap] -> Grid -> Grid
-fillTheGrid [] grid = grid
+fillTheGrid :: [InternalMap] -> [Marking] -> Grid
+fillTheGrid [] grid = chunksOf n grid
 fillTheGrid (x:xs) grid =
     let
-        tempGrid = concat grid
         pos1 = read (findParam x "x" "x not defined.") :: Int
         pos2 = read (findParam x "y" "y not defined.") :: Int
         player = findParam x "v" "player not defined."
         index = n * pos1 + pos2
-        newGrid = chunksOf n (replaceNth index (Just (strToPlayer player)) tempGrid)
+        newGrid = replaceNth index (Just (strToPlayer player)) grid
     in fillTheGrid xs newGrid
 
 getWinSeqs :: Grid -> [[Marking]]
@@ -111,6 +110,6 @@ winner map
     | winner' O  = Just 'o'
     | otherwise = Nothing
     where
-        grid = fillTheGrid (parseScala map) emptyGrid
+        grid = fillTheGrid (parseScala map) (concat emptyGrid)
         winner' :: Player -> Bool
         winner' player = any (all (== Just player)) $ getWinSeqs grid
