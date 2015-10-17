@@ -1,4 +1,4 @@
 # Funkcinis Programavimas. #
 ---
-	## Pirma užduotis: Kryžiukai-nuliukai (TicTacToe) ##
-	---
+## Pirma užduotis: Kryžiukai-nuliukai (TicTacToe) ##
+---
