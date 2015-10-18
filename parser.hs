@@ -2,7 +2,7 @@ module Parser
 where
 
 import Data.List.Extra
-import TicTacToe.Messages.Scala
+import TicTacToe.Messages.SExpr
 
 type InternalMap = [(String, String)]
 -- Size of the grid
@@ -10,10 +10,9 @@ n :: Int
 n = 3
 
 data Player = X | O deriving (Show, Read, Eq)
-type Marking = Maybe Player
 type Position = (Int, Int)
 
-type Grid = [[Marking]]
+type Grid = [[Maybe Player]]
 
 strToPlayer :: String -> Player
 strToPlayer "x" = X
@@ -26,7 +25,7 @@ strToPlayer "0" = O
 emptyGrid :: Grid
 emptyGrid = replicate n $ replicate n Nothing
 
-replaceNth :: Int -> Marking -> [Marking] -> [Marking]
+replaceNth :: Int -> Maybe Player -> [Maybe Player] -> [Maybe Player]
 replaceNth n newVal (x:xs)
      | n == 0 = newVal:xs
      | otherwise = x:replaceNth (n-1) newVal xs
@@ -37,10 +36,10 @@ findParam map param errorMsg =
         Just val -> val
         Nothing -> error errorMsg
 
-stripElem :: String -> String -> String -> String
-stripElem str elemPrefix errorMsg = 
-    case stripPrefix (elemPrefix ++ "(") str of
-        Just rest -> case stripSuffix ")" rest of
+stripElem :: String -> String -> String -> String -> String
+stripElem str elemPrefix elemPostfix errorMsg = 
+    case stripPrefix elemPrefix str of
+        Just rest -> case stripSuffix elemPostfix rest of
             Just rest -> rest
             Nothing -> error errorMsg
         Nothing -> error errorMsg
@@ -49,12 +48,10 @@ getMapInnards :: String -> InternalMap -> InternalMap
 getMapInnards [] acc = acc
 getMapInnards str acc =
     let 
-        item = takeWhile (/= ',') str
-        tuple = case (stripInfix "->" item) of
-            Just (key, value) -> (key, value)
-            Nothing -> error "Parser error."
-        rest = drop (length item + 1) str
-    in reverse $ getMapInnards rest (tuple : acc)
+        item = takeWhile (/= ' ') str
+        value = takeWhile (/= ' ') (drop (length item + 1) str)
+        rest = drop (length item + length value + 2) str
+    in reverse $ getMapInnards rest ((item, value) : acc)
 
 getMapElem :: String -> Maybe (String, String)
 getMapElem [] = Nothing
@@ -75,18 +72,20 @@ parseMaps :: [String] -> [InternalMap] -> [InternalMap]
 parseMaps [] acc = acc
 parseMaps (x:xs) acc =
     let
-        striped = filter (/=' ') (stripElem x "Map" "Not a map.")
+        num = takeWhile (/= '(') x
+        denum = drop (length num) x
+        striped = filter (/= '"') (stripElem denum "(m " ")" "Not a map.")
         parsed = getMapInnards striped []
     in parseMaps xs (parsed : acc)
 
-parseScala :: String -> [InternalMap]
-parseScala str =
+parseSExpt :: String -> [InternalMap]
+parseSExpt str =
     let
-        listInnards = stripElem str "List" "Not a list."
+        listInnards = stripElem str "(m " ")" "Not a list."
         parsedData = parseMaps (parseList listInnards []) []
     in parsedData
 
-fillTheGrid :: [InternalMap] -> [Marking] -> Grid
+fillTheGrid :: [InternalMap] -> [Maybe Player] -> Grid
 fillTheGrid [] grid = chunksOf n grid
 fillTheGrid (x:xs) grid =
     let
@@ -97,7 +96,7 @@ fillTheGrid (x:xs) grid =
         newGrid = replaceNth index (Just (strToPlayer player)) grid
     in fillTheGrid xs newGrid
 
-getWinSeqs :: Grid -> [[Marking]]
+getWinSeqs :: Grid -> [[Maybe Player]]
 getWinSeqs grid = horizontal ++ vertical ++ [fDiag, bDiag]
   where horizontal = grid
         vertical = transpose grid
@@ -110,6 +109,6 @@ winner map
     | winner' O  = Just 'o'
     | otherwise = Nothing
     where
-        grid = fillTheGrid (parseScala map) (concat emptyGrid)
+        grid = fillTheGrid (parseSExpt map) (concat emptyGrid)
         winner' :: Player -> Bool
         winner' player = any (all (== Just player)) $ getWinSeqs grid
