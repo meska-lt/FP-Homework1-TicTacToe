@@ -43,14 +43,14 @@ stripElem str elemPrefix elemPostfix errorMsg =
             Nothing -> error errorMsg
         Nothing -> error errorMsg
 
-getMapInnards :: String -> InternalMap -> InternalMap
-getMapInnards [] acc = acc
-getMapInnards str acc =
+getMapContents :: String -> InternalMap -> InternalMap
+getMapContents [] acc = acc
+getMapContents str acc =
     let 
         item = takeWhile (/= ' ') str
         value = takeWhile (/= ' ') (drop (length item + 1) str)
         rest = drop (length item + length value + 2) str
-    in reverse $ getMapInnards rest ((item, value) : acc)
+    in reverse $ getMapContents rest ((item, value) : acc)
 
 getMapElem :: String -> Maybe (String, String)
 getMapElem [] = Nothing
@@ -69,19 +69,19 @@ parseList str acc =
 
 parseMaps :: [String] -> [InternalMap] -> [InternalMap]
 parseMaps [] acc = acc
-parseMaps (x:xs) acc =
+parseMaps (head:tail) acc =
     let
-        num = takeWhile (/= '(') x
-        denum = drop (length num) x
+        num = takeWhile (/= '(') head
+        denum = drop (length num) head
         striped = filter (/= '"') (stripElem denum "(m " ")" "Not a map.")
-        parsed = getMapInnards striped []
-    in parseMaps xs (parsed : acc)
+        parsed = getMapContents striped []
+    in parseMaps tail (parsed : acc)
 
-parseSExpt :: String -> [InternalMap]
-parseSExpt str =
+parseSExpr :: String -> [InternalMap]
+parseSExpr str =
     let
-        listInnards = stripElem str "(m " ")" "Not a list."
-        parsedData = parseMaps (parseList listInnards []) []
+        listContent = stripElem str "(m " ")" "Not a list."
+        parsedData = parseMaps (parseList listContent []) []
     in parsedData
 
 fillTheGrid :: [InternalMap] -> [Maybe Player] -> Board
@@ -102,12 +102,12 @@ getWinSeqs grid = horizontal ++ vertical ++ [fDiag, bDiag]
         fDiag = zipWith (!!) (reverse grid) [0..]
         bDiag = zipWith (!!) grid [0..]
 
-winner :: String -> Maybe Char
-winner map
-    | winner' X  = Just 'x'
-    | winner' O  = Just 'o'
+getWinner :: String -> Maybe Char
+getWinner map
+    | winner X  = Just 'x'
+    | winner O  = Just 'o'
     | otherwise = Nothing
     where
-        grid = fillTheGrid (parseSExpt map) (concat emptyBoard)
-        winner' :: Player -> Bool
-        winner' player = any (all (== Just player)) $ getWinSeqs grid
+        grid = fillTheGrid (parseSExpr map) (concat emptyBoard)
+        winner :: Player -> Bool
+        winner player = any (all (== Just player)) $ getWinSeqs grid
