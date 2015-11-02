@@ -11,10 +11,10 @@ boardEdgeLength = 3
 
 data Player = X | O deriving (Show, Read, Eq)
 type Position = (Int, Int)
-
 type Board = [[Maybe Player]]
 
 strToPlayer :: String -> Player
+strToPlayer "+" = X
 strToPlayer "x" = X
 strToPlayer "X" = X
 strToPlayer "o" = O
@@ -25,9 +25,9 @@ emptyBoard :: Board
 emptyBoard = replicate boardEdgeLength $ replicate boardEdgeLength Nothing
 
 replaceNth :: Int -> Maybe Player -> [Maybe Player] -> [Maybe Player]
-replaceNth n newVal (x:xs)
-     | n == 0 = newVal:xs
-     | otherwise = x:replaceNth (n-1) newVal xs
+replaceNth n newVal (head:tail)
+     | n == 0 = newVal:tail
+     | otherwise = head:replaceNth (n-1) newVal tail
 
 findParam :: InternalMap -> String -> String -> String
 findParam map param errorMsg =
