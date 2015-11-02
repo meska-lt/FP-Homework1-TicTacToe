@@ -102,11 +102,11 @@ getWinSeqs grid = horizontal ++ vertical ++ [fDiag, bDiag]
         fDiag = zipWith (!!) (reverse grid) [0..]
         bDiag = zipWith (!!) grid [0..]
 
-getWinner :: String -> Maybe Char
+getWinner :: String -> String
 getWinner map
-    | winner X  = Just 'x'
-    | winner O  = Just 'o'
-    | otherwise = Nothing
+    | winner X  = "Winner: X"
+    | winner O  = "Winner: O"
+    | otherwise = "Winner: there is none"
     where
         grid = fillTheGrid (parseSExpr map) (concat emptyBoard)
         winner :: Player -> Bool
