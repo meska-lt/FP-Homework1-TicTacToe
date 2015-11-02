@@ -35,8 +35,8 @@ findParam map param errorMsg =
         Just val -> val
         Nothing -> error errorMsg
 
-stripElem :: String -> String -> String -> String -> String
-stripElem str elemPrefix elemPostfix errorMsg = 
+trimElem :: String -> String -> String -> String -> String
+trimElem str elemPrefix elemPostfix errorMsg = 
     case stripPrefix elemPrefix str of
         Just rest -> case stripSuffix elemPostfix rest of
             Just rest -> rest
@@ -73,14 +73,14 @@ parseMaps (head:tail) acc =
     let
         num = takeWhile (/= '(') head
         denum = drop (length num) head
-        striped = filter (/= '"') (stripElem denum "(m " ")" "Not a map.")
+        striped = filter (/= '"') (trimElem denum "(m " ")" "Not a map.")
         parsed = getMapContents striped []
     in parseMaps tail (parsed : acc)
 
 parseSExpr :: String -> [InternalMap]
 parseSExpr str =
     let
-        listContent = stripElem str "(m " ")" "Not a list."
+        listContent = trimElem str "(m " ")" "Not a list."
         parsedData = parseMaps (parseList listContent []) []
     in parsedData
 
